@@ -9,7 +9,10 @@ exports.handler = async function (context, event, callback) {
   try {
     const tokenInfo = await validateToken(context, event.Token);
     console.log('Frontline token user identity: ' + tokenInfo.identity);
-    if (tokenInfo.identity === event.Worker) {
+    if (event.Anchor) { // workaround to avoid pagination
+      response.setBody([]);
+      return callback(null, response);
+    } else if (tokenInfo.identity === event.Worker) {
       const connection = await authenticate(context);
       const identityInfo = await connection.identity();
       console.log('Connected as SF user:' + identityInfo.username);
@@ -37,10 +40,10 @@ exports.handler = async function (context, event, callback) {
       }
       return callback(null, response);
     } else {
-      console.error(`Worker in request ${event.Worker} 
-        and token ${tokenInfo.identity} mismatch`);
-      response.setBody('Authorization failed');
+      console.error(`Worker in request: ${event.Worker}; 
+        identity in token: ${tokenInfo.identity}`);
       response.setStatusCode(403);
+      return callback(null, response);
     }
   } catch (e) {
     console.error(e);
@@ -116,7 +119,6 @@ const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => 
           'Account.Name': 1,
         }
       )
-      .sort({ LastModifiedDate: -1 })
       .limit(1)
       .execute();
     console.log("Fetched # SFDC records: " + sfdcRecords.length);
@@ -167,8 +169,8 @@ const getCustomersListCallback = async (pageSize, connection) => {
           Name: 1,
         }
       )
-      .sort({ LastModifiedDate: -1 })
-      .limit(parseInt(pageSize))
+      .sort({ Name: 1 })
+      .limit(2000)
       .execute();
     console.log("Fetched # SFDC records: " + sfdcRecords.length);
   } catch (err) {

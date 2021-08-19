@@ -122,3 +122,6 @@ dist
 
 # Secrets
 assets/server.private.key
+
+# Twilio deployment
+.twiliodeployinfo

@@ -158,7 +158,6 @@ const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => 
 };
 
 const getCustomersListCallback = async (pageSize, connection) => {
-  console.log('Querying # customers: ', pageSize);
   let sfdcRecords = [];
   try {
     sfdcRecords = await connection.sobject("Contact")

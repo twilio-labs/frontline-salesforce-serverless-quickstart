@@ -11,8 +11,7 @@
     "axios": "^0.21.1",
     "jsforce": "^1.10.1",
     "jsonwebtoken": "^8.5.1",
-    "twilio": "^3.56",
-    "twilio-flex-token-validator": "^1.5.6"
+    "twilio": "^3.56"
   },
   "devDependencies": {
     "twilio-run": "^3.2.0"

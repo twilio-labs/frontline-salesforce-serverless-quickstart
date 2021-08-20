@@ -28,7 +28,8 @@ exports.handler = async function (context, event, callback) {
         case 'GetCustomersList': {
           response.setBody(
             await getCustomersListCallback(
-              event.PageSize,
+              //event.PageSize, // not currently handling pagination
+              tokenInfo.identity,
               connection)
           );
           break;
@@ -127,6 +128,10 @@ const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => 
   }
   const sfdcRecord = sfdcRecords[0];
 
+  const accountName = (
+    sfdcRecord.Account ? sfdcRecord.Account.Name : 'Unknown Company'
+  );
+
   return {
     objects: {
       customer: {
@@ -150,19 +155,21 @@ const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => 
         // avatar: customerDetails.avatar,
         details: {
           title: "Information",
-          content: `${sfdcRecord.Account.Name} - ${sfdcRecord.Title}`
+          content: `${accountName} - ${sfdcRecord.Title}`
         }
       }
     }
   }
 };
 
-const getCustomersListCallback = async (pageSize, connection) => {
+const getCustomersListCallback = async (workerIdentity, connection) => {
   let sfdcRecords = [];
   try {
     sfdcRecords = await connection.sobject("Contact")
       .find(
-        {},
+        {
+          'Owner.Email': workerIdentity
+        },
         {
           Id: 1,
           Name: 1,

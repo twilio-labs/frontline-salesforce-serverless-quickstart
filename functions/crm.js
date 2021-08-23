@@ -13,7 +13,7 @@ exports.handler = async function (context, event, callback) {
       response.setBody([]);
       return callback(null, response);
     } else if (tokenInfo.identity === event.Worker) {
-      const connection = await authenticate(context);
+      const connection = await authenticate(context, tokenInfo.identity);
       const identityInfo = await connection.identity();
       console.log('Connected as SF user:' + identityInfo.username);
       switch (event.location) {
@@ -53,12 +53,12 @@ exports.handler = async function (context, event, callback) {
   }
 };
 
-const authenticate = async (context) => {
+const authenticate = async (context, frontlineUsername) => {
   const threeMinutesFromNowInSeconds = Math.floor(Date.now() / 1000) + 3 * 60;
   const claim = {
     iss: context.SF_CONSUMER_KEY,
     aud: 'https://login.salesforce.com',
-    prn: context.SF_USERNAME,
+    prn: frontlineUsername,
     exp: threeMinutesFromNowInSeconds
   };
   const openKey = Runtime.getAssets()['/server.key'].open;

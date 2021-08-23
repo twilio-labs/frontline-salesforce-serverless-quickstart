@@ -50,7 +50,7 @@ To deploy these Frontline Functions, you will need:
 
 ## Salesforce Connected App
 
-Create a [Salesforce Connected App](https://help.salesforce.com/articleView?id=sf.connected_app_create_basics.htm) under Salesforce Setup > App Maanger > New Connected App with at least `Access and manage your data (api)` and `Perform requests on your behalf at any time (refresh_token, offline_access)` OAuth scopes. The Callback URL can be `https://login.salesforce.com/services/oauth2/success` and is only used during the initial setup.
+Create a [Salesforce Connected App](https://help.salesforce.com/articleView?id=sf.connected_app_create_basics.htm) under Salesforce Setup > App Manager > New Connected App with at least `Access and manage your data (api)` and `Perform requests on your behalf at any time (refresh_token, offline_access)` OAuth scopes. The Callback URL can be `https://login.salesforce.com/services/oauth2/success` and is only used during the initial setup.
 
 <img width="840px" src="resources/SalesforceConnectedApp1.png"/>
 

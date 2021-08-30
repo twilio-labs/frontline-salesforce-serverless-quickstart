@@ -47,7 +47,7 @@ const authenticate = async (context) => {
 
 const routeConversation = async (context, twilioClient, conversationSid,
     customerNumber, sfdcConn) => {
-    let workerIdentity = await getAccountOwnerByNumber(customerNumber, sfdcConn);
+    let workerIdentity = await getContactOwnerByNumber(customerNumber, sfdcConn);
     if (!workerIdentity) { // Customer doesn't have a worker
         // Select a default worker
         workerIdentity = context.DEFAULT_WORKER;
@@ -65,7 +65,7 @@ const routeConversationToWorker = async (twilioClient, conversationSid, workerId
     console.log('Created agent participant: ', participant.sid);
 }
 
-const getAccountOwnerByNumber = async (number, sfdcConn) => {
+const getContactOwnerByNumber = async (number, sfdcConn) => {
     console.log('Getting Contact Owner by #: ', number);
     let sfdcRecords = [];
     try {
@@ -81,11 +81,15 @@ const getAccountOwnerByNumber = async (number, sfdcConn) => {
             .sort({ LastModifiedDate: -1 })
             .limit(1)
             .execute();
-        console.log("Fetched # SFDC records: " + sfdcRecords.length);
+        console.log("Fetched # SFDC records for contact owner by #: " + sfdcRecords.length);
+        if (sfdcRecords.length === 0) {
+            return;
+        }
+        const sfdcRecord = sfdcRecords[0];
+        console.log('Matched to worker: ' + sfdcRecord.Owner.Email);
+        return sfdcRecord.Owner.Email;
     } catch (err) {
         console.error(err);
     }
-    const sfdcRecord = sfdcRecords[0];
-    console.log('Matched to worker: ' + sfdcRecord.Owner.Email);
-    return sfdcRecord.Owner.Email;
+  
 };

@@ -16,11 +16,7 @@ exports.handler = async function (context, event, callback) {
                 const customerDetails = await getCustomerByNumber(customerNumber, sfdcConn) || {};
                 const conversationProperties = {
                     friendly_name: customerDetails.display_name || customerNumber,
-                    // attributes: JSON.stringify({
-                    //     avatar: customerDetails.avatar
-                    // })
                 };
-                console.log('Responding with: ' + JSON.stringify(conversationProperties));
                 response.setBody(conversationProperties);
             }
             break;
@@ -96,14 +92,17 @@ const getCustomerByNumber = async (number, sfdcConn) => {
             .sort({ LastModifiedDate: -1 })
             .limit(1)
             .execute();
-        console.log("Fetched # SFDC records: " + sfdcRecords.length);
+        console.log("Fetched # SFDC records for contact by #: " + sfdcRecords.length);
+        if (sfdcRecords.length === 0) {
+            return;
+        }
+        const sfdcRecord = sfdcRecords[0];
+        return {
+            display_name: sfdcRecord.Name,
+            customer_id: sfdcRecord.Id
+        }
     } catch (err) {
         console.error(err);
-    }
-    const sfdcRecord = sfdcRecords[0];
-    return {
-        display_name: sfdcRecord.Name,
-        customer_id: sfdcRecord.Id
     }
 };
 
@@ -112,7 +111,6 @@ const setCustomerParticipantProperties = async (customerParticipant, customerDet
     const customerProperties = {
         attributes: JSON.stringify({
             ...participantAttributes,
-            // avatar: participantAttributes.avatar || customerDetails.avatar,
             customer_id: participantAttributes.customer_id || customerDetails.customer_id,
             display_name: participantAttributes.display_name || customerDetails.display_name
         })

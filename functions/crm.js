@@ -122,7 +122,7 @@ const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => 
       )
       .limit(1)
       .execute();
-    console.log("Fetched # SFDC records: " + sfdcRecords.length);
+    console.log("Fetched # SFDC records for customer details by ID: " + sfdcRecords.length);
   } catch (err) {
     console.error(err);
   }
@@ -151,8 +151,6 @@ const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => 
             value: sfdcRecord.Email
           }
         ],
-        // links: customerDetails.links,
-        // avatar: customerDetails.avatar,
         details: {
           title: "Information",
           content: `${accountName} - ${sfdcRecord.Title}`
@@ -178,15 +176,14 @@ const getCustomersListCallback = async (workerIdentity, connection) => {
       .sort({ Name: 1 })
       .limit(2000)
       .execute();
-    console.log("Fetched # SFDC records: " + sfdcRecords.length);
+    console.log("Fetched # SFDC records for customers list: " + sfdcRecords.length);
   } catch (err) {
     console.error(err);
   }
 
   const list = sfdcRecords.map(contact => ({
     display_name: contact.Name,
-    customer_id: contact.Id,
-    // avatar: customer.avatar
+    customer_id: contact.Id
   }));
 
   return {

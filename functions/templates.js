@@ -1,4 +1,6 @@
-const axios = require('axios');
+const validateTokenPath = Runtime.getFunctions()['auth/frontline-validate-token'].path;
+
+const { validateToken } = require(validateTokenPath);
 
 exports.handler = async function (context, event, callback) {
   let response = new Twilio.Response();
@@ -34,25 +36,6 @@ exports.handler = async function (context, event, callback) {
   }
 };
 
-const validateToken = async (context, token) => {
-  const response = await axios.post(
-    `https://iam.twilio.com/v2/Tokens/validate/${context.SSO_REALM_SID}`,
-    {
-      token,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      auth: {
-        username: context.ACCOUNT_SID,
-        password: context.AUTH_TOKEN
-      },
-    }
-  );
-  return { identity: response.data.realm_user_id };
-};
-
 const getTemplatesByCustomerId = (contactId) => {
   console.log('Getting Customer templates: ', contactId);
   return {
@@ -68,14 +51,14 @@ const getTodaysDate = () => {
   const today = new Date();
   console.log(today.toDateString());
   return today.toDateString();
-}
+};
 
 const getTomorrowsDate = () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   console.log(tomorrow.toDateString());
   return tomorrow.toDateString();
-}
+};
 
 const MEETING_CONFIRM_TODAY = `Just a reminder that our meeting is scheduled for today on ${getTodaysDate()}`;
 const MEETING_CONFIRM_TOMORROW = `Just a reminder that our meeting is scheduled for tomorrow on ${getTomorrowsDate()}`;

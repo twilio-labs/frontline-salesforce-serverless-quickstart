@@ -117,7 +117,7 @@ const getCustomersListCallback = async (workerIdentity, connection) => {
     sfdcRecords = await connection.sobject("Contact")
       .find(
         {
-          'Owner.Email': workerIdentity
+          'Owner.Username': workerIdentity
         },
         {
           Id: 1,

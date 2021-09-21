@@ -7,15 +7,15 @@ exports.handler = async function (context, event, callback) {
     let response = new Twilio.Response();
     response.appendHeader('Content-Type', 'application/json');
     const conversationSid = event.ConversationSid;
-    const customerNumber = event['MessagingBinding.Address'];
+    const workerNumber = event['MessagingBinding.ProxyAddress'];
     const sfdcConn = await sfdcAuthenticate(context);
-    await routeConversation(context, twilioClient, conversationSid, customerNumber, sfdcConn);
+    await routeConversation(context, twilioClient, conversationSid, workerNumber, sfdcConn);
     return callback(null, response);
 };
 
 const routeConversation = async (context, twilioClient, conversationSid,
-    customerNumber, sfdcConn) => {
-    let workerIdentity = await getContactOwnerByNumber(customerNumber, sfdcConn);
+    workerNumber, sfdcConn) => {
+    let workerIdentity = await getContactOwnerByNumber(workerNumber, sfdcConn);
     if (!workerIdentity) { // Customer doesn't have a worker
         // Select a default worker
         workerIdentity = context.DEFAULT_WORKER;
@@ -37,6 +37,20 @@ const getContactOwnerByNumber = async (number, sfdcConn) => {
     console.log('Getting Contact Owner by #: ', number);
     let sfdcRecords = [];
     try {
+        // Use below query if looking up Worker identity based on Twilio proxy #
+        sfdcRecords = await sfdcConn.sobject("User")
+            .find(
+                {
+                    'MobilePhone': number
+                },
+                {
+                    'Username': 1,
+                }
+            )
+            .sort({ LastModifiedDate: -1 })
+            .limit(1)
+            .execute();
+        /* Use below query if looking up Contact owner by Contact phone #
         sfdcRecords = await sfdcConn.sobject("Contact")
             .find(
                 {
@@ -49,13 +63,14 @@ const getContactOwnerByNumber = async (number, sfdcConn) => {
             .sort({ LastModifiedDate: -1 })
             .limit(1)
             .execute();
+        */
         console.log("Fetched # SFDC records for contact owner by #: " + sfdcRecords.length);
         if (sfdcRecords.length === 0) {
             return;
         }
         const sfdcRecord = sfdcRecords[0];
-        console.log('Matched to worker: ' + sfdcRecord.Owner.Username);
-        return sfdcRecord.Owner.Username;
+        console.log('Matched to worker: ' + sfdcRecord.Username);
+        return sfdcRecord.Username;
     } catch (err) {
         console.error(err);
     }

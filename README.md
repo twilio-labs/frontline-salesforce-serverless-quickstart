@@ -11,6 +11,7 @@ The Functions implement the following Frontline and Conversations callbacks:
     - Pull a Customer List per user from Contact records from Salesforce based on the Salesforce Contact Owner matching the Frontline user's identity
     - Pull a Customer's details by Customer ID (Salesforce Contact Record ID)
 - [outgoing-conversation.js](functions/outgoing-conversation.js) - Implements the Frontline [Outgoing Conversations Callback](https://www.twilio.com/docs/frontline/outgoing-conversations) to return the outbound proxy addresses for SMS and WhatsApp channels
+- [inbound-routing.protected.js](functions/inbound-routing.protected.js) - Implements the Frontline [Inbound Routing Callback](https://www.twilio.com/docs/frontline/handle-incoming-conversations) to add the Frontline worker to the Conversation
 - [templates.js](functions/templates.js) - Implements the Frontline [Templates Callback](https://www.twilio.com/docs/frontline/templated-messages) to return WhatsApp-approved templates for outbound WhatsApp conversations
 
 #### Conversations 

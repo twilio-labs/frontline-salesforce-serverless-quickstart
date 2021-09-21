@@ -125,3 +125,6 @@ assets/server.private.key
 
 # Twilio deployment
 .twiliodeployinfo
+
+# Package lock
+package-lock.json

@@ -1,7 +1,8 @@
-const jwt = require('jsonwebtoken');
-const jsforce = require('jsforce');
-const axios = require('axios');
-var querystring = require('querystring');
+const validateTokenPath = Runtime.getFunctions()['auth/frontline-validate-token'].path;
+const sfdcAuthenticatePath = Runtime.getFunctions()['auth/sfdc-authenticate'].path;
+
+const { validateToken } = require(validateTokenPath);
+const { sfdcAuthenticate } = require(sfdcAuthenticatePath);
 
 exports.handler = async function (context, event, callback) {
   let response = new Twilio.Response();
@@ -13,7 +14,7 @@ exports.handler = async function (context, event, callback) {
       response.setBody([]);
       return callback(null, response);
     } else if (tokenInfo.identity === event.Worker) {
-      const connection = await authenticate(context, tokenInfo.identity);
+      const connection = await sfdcAuthenticate(context, tokenInfo.identity);
       const identityInfo = await connection.identity();
       console.log('Connected as SF user:' + identityInfo.username);
       switch (event.location) {
@@ -51,56 +52,6 @@ exports.handler = async function (context, event, callback) {
     response.setStatusCode(500);
     return callback(null, response);
   }
-};
-
-const authenticate = async (context, frontlineUsername) => {
-  const threeMinutesFromNowInSeconds = Math.floor(Date.now() / 1000) + 3 * 60;
-  const claim = {
-    iss: context.SF_CONSUMER_KEY,
-    aud: 'https://login.salesforce.com',
-    prn: frontlineUsername,
-    exp: threeMinutesFromNowInSeconds
-  };
-  const openKey = Runtime.getAssets()['/server.key'].open;
-  const key = openKey();
-  const jwtToken = jwt.sign(claim, key, { algorithm: 'RS256' });
-  const params = {
-    grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-    assertion: jwtToken
-  };
-  try {
-    const response = await axios.post(
-      'https://login.salesforce.com/services/oauth2/token',
-      querystring.stringify(params),
-    );
-    const credentials = response.data;
-    const connection = new jsforce.Connection({
-      accessToken: credentials.access_token,
-      instanceUrl: credentials.instance_url
-    });
-    return connection;
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-const validateToken = async (context, token) => {
-  const response = await axios.post(
-    `https://iam.twilio.com/v2/Tokens/validate/${context.SSO_REALM_SID}`,
-    {
-      token,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      auth: {
-        username: context.ACCOUNT_SID,
-        password: context.AUTH_TOKEN
-      },
-    }
-  );
-  return { identity: response.data.realm_user_id };
 };
 
 const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => {

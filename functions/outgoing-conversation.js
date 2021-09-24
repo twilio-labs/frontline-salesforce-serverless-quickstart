@@ -17,7 +17,9 @@ exports.handler = async function (context, event, callback) {
                 case 'GetProxyAddress': {
                     if (event.Channel.type === 'whatsapp') {
                         response.setBody({
-                            proxy_address: outboundNumber || context.WHATSAPP_NUMBER
+                            proxy_address: outboundNumber ?
+                                `whatsapp:${outboundNumber}` :
+                                context.WHATSAPP_NUMBER
                         });
                     } else {
                         response.setBody({

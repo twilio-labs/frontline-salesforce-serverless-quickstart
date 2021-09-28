@@ -42,7 +42,7 @@ const getTemplatesByCustomerId = (contactId) => {
     display_name: 'Meeting Reminders',
     templates: [
       { "content": MEETING_CONFIRM_TODAY, whatsAppApproved: true },
-      { "content": MEETING_CONFIRM_TOMORROW, whatsAppApproved: true }
+      { "content": MEETING_CONFIRM_TOMORROW }
     ]
   };
 };

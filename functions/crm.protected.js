@@ -1,23 +1,19 @@
-const validateTokenPath = Runtime.getFunctions()['auth/frontline-validate-token'].path;
 const sfdcAuthenticatePath = Runtime.getFunctions()['auth/sfdc-authenticate'].path;
-
-const { validateToken } = require(validateTokenPath);
 const { sfdcAuthenticate } = require(sfdcAuthenticatePath);
 
 exports.handler = async function (context, event, callback) {
   let response = new Twilio.Response();
   response.appendHeader('Content-Type', 'application/json');
   try {
-    const tokenInfo = await validateToken(context, event.Token);
-    console.log('Frontline token user identity: ' + tokenInfo.identity);
+    console.log('Frontline user identity: ' + event.Worker);
     if (event.Anchor) { // workaround to avoid pagination
       response.setBody([]);
       return callback(null, response);
-    } else if (tokenInfo.identity === event.Worker) {
-      const connection = await sfdcAuthenticate(context, tokenInfo.identity);
+    } else {
+      const connection = await sfdcAuthenticate(context, event.Worker);
       const identityInfo = await connection.identity();
       console.log('Connected as SF user:' + identityInfo.username);
-      switch (event.location) {
+      switch (event.Location) {
         case 'GetCustomerDetailsByCustomerId': {
           response.setBody(
             await getCustomerDetailsByCustomerIdCallback(
@@ -30,23 +26,18 @@ exports.handler = async function (context, event, callback) {
           response.setBody(
             await getCustomersListCallback(
               //event.PageSize, // not currently handling pagination
-              tokenInfo.identity,
+              event.Worker,
               connection)
           );
           break;
         }
         default: {
-          console.log('Unknown location: ', event.location);
+          console.log('Unknown Location: ', event.Location);
           res.setStatusCode(422);
         }
       }
       return callback(null, response);
-    } else {
-      console.error(`Worker in request: ${event.Worker}; 
-        identity in token: ${tokenInfo.identity}`);
-      response.setStatusCode(403);
-      return callback(null, response);
-    }
+    } 
   } catch (e) {
     console.error(e);
     response.setStatusCode(500);

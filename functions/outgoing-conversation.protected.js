@@ -1,45 +1,34 @@
-const validateTokenPath = Runtime.getFunctions()['auth/frontline-validate-token'].path;
 const sfdcAuthenticatePath = Runtime.getFunctions()['auth/sfdc-authenticate'].path;
-
-const { validateToken } = require(validateTokenPath);
 const { sfdcAuthenticate } = require(sfdcAuthenticatePath);
 
 exports.handler = async function (context, event, callback) {
     let response = new Twilio.Response();
     response.appendHeader('Content-Type', 'application/json');
     try {
-        const tokenInfo = await validateToken(context, event.Token);
-        console.log('Frontline token user identity: ' + tokenInfo.identity);
+        console.log('Frontline user identity: ' + event.Worker);
         const sfdcConn = await sfdcAuthenticate(context);
-        const outboundNumber = await getWorkerOutboundNumber(tokenInfo.identity, sfdcConn);
-        if (tokenInfo.identity === event.Worker) {
-            switch (event.location) {
-                case 'GetProxyAddress': {
-                    if (event.Channel.type === 'whatsapp') {
-                        response.setBody({
-                            proxy_address: outboundNumber ?
-                                `whatsapp:${outboundNumber}` :
-                                context.WHATSAPP_NUMBER
-                        });
-                    } else {
-                        response.setBody({
-                            proxy_address: outboundNumber || context.SMS_NUMBER
-                        })
-                    }
-                    break;
+        const outboundNumber = await getWorkerOutboundNumber(event.Worker, sfdcConn);
+        switch (event.Location) {
+            case 'GetProxyAddress': {
+                if (event.ChannelType === 'whatsapp') {
+                    response.setBody({
+                        proxy_address: outboundNumber ?
+                            `whatsapp:${outboundNumber}` :
+                            context.WHATSAPP_NUMBER
+                    });
+                } else {
+                    response.setBody({
+                        proxy_address: outboundNumber || context.SMS_NUMBER
+                    })
                 }
-                default: {
-                    console.log('Unknown location: ', event.location);
-                    response.setStatusCode(422);
-                }
+                break;
             }
-            return callback(null, response);
-        } else {
-            console.error(`Worker in request ${event.Worker} 
-                and token ${tokenInfo.identity} mismatch`);
-            response.setBody('Authorization failed');
-            response.setStatusCode(403);
+            default: {
+                console.log('Unknown Location: ', event.Location);
+                response.setStatusCode(422);
+            }
         }
+        return callback(null, response);
     } catch (e) {
         console.error(e);
         response.setStatusCode(500);

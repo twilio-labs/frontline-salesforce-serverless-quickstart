@@ -1,5 +1,4 @@
 const sfdcAuthenticatePath = Runtime.getFunctions()['auth/sfdc-authenticate'].path;
-
 const { sfdcAuthenticate } = require(sfdcAuthenticatePath);
 
 exports.handler = async function (context, event, callback) {

@@ -7,12 +7,12 @@ This Twilio Functions service implements the Frontline callbacks and Conversatio
 The Functions implement the following Frontline and Conversations callbacks:
 
 #### Frontline
-- [crm.js](functions/crm.js) - Implements the Frontline [CRM Callback](https://www.twilio.com/docs/frontline/my-customers) to:
+- [crm.protected.js](functions/crm.protected.js) - Implements the Frontline [CRM Callback](https://www.twilio.com/docs/frontline/my-customers) to:
     - Pull a Customer List per user from Contact records from Salesforce based on the Salesforce Contact Owner matching the Frontline user's identity
     - Pull a Customer's details by Customer ID (Salesforce Contact Record ID)
-- [outgoing-conversation.js](functions/outgoing-conversation.js) - Implements the Frontline [Outgoing Conversations Callback](https://www.twilio.com/docs/frontline/outgoing-conversations) to return the outbound proxy addresses for SMS and WhatsApp channels
+- [outgoing-conversation.protected.js](functions/outgoing-conversation.protected.js) - Implements the Frontline [Outgoing Conversations Callback](https://www.twilio.com/docs/frontline/outgoing-conversations) to return the outbound proxy addresses for SMS and WhatsApp channels
 - [inbound-routing.protected.js](functions/inbound-routing.protected.js) - Implements the Frontline [Inbound Routing Callback](https://www.twilio.com/docs/frontline/handle-incoming-conversations) to add the Frontline worker to the Conversation
-- [templates.js](functions/templates.js) - Implements the Frontline [Templates Callback](https://www.twilio.com/docs/frontline/templated-messages) to return WhatsApp-approved templates for outbound WhatsApp conversations
+- [templates.protected.js](functions/templates.protected.js) - Implements the Frontline [Templates Callback](https://www.twilio.com/docs/frontline/templated-messages) to return WhatsApp-approved templates for outbound WhatsApp conversations
 
 #### Conversations 
 - [inbound-conversation.protected.js](functions/inbound-conversation.protected.js) - Implements the Frontline [Custom Routing Callback](https://www.twilio.com/docs/frontline/handle-incoming-conversations#custom-routing-callback-request-parameters):

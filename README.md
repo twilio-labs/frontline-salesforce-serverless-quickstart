@@ -90,7 +90,6 @@ Select "Use digital signatures" and follow Salesforce's instructions to [Create 
     AUTH_TOKEN=Found at https://www.twilio.com/console 
     SF_CONSUMER_KEY=Your Salesforce Connected App OAuth Client ID
     SF_USERNAME=The username to make JWT bearer token Salesforce API calls
-    SSO_REALM_SID=Obtain from the Twilio Console under Frontline > Manage > SSO/Log in 
     WHATSAPP_NUMBER=WhatsApp number for outbound conversations proxy address
     SMS_NUMBER=SMS number for outbound conversations proxy address
     DEFAULT_WORKER=The default Frontline worker for inbound conversation routing if no matching Contact Owner is found in Salesforce

@@ -23,12 +23,22 @@ exports.handler = async function (context, event, callback) {
           break;
         }
         case 'GetCustomersList': {
-          response.setBody(
-            await getCustomersListCallback(
-              //event.PageSize, // not currently handling pagination
-              event.Worker,
-              connection)
-          );
+          if (event.Query && event.Query.length > 1) {
+            response.setBody(
+              await getCustomersSearch(
+                event.Worker,
+                event.Query,
+                connection,
+              )
+            );
+          } else {
+            response.setBody(
+              await getCustomersList(
+                //event.PageSize, // not currently handling pagination
+                event.Worker,
+                connection)
+            );
+          }
           break;
         }
         default: {
@@ -37,7 +47,7 @@ exports.handler = async function (context, event, callback) {
         }
       }
       return callback(null, response);
-    } 
+    }
   } catch (e) {
     console.error(e);
     response.setStatusCode(500);
@@ -102,7 +112,7 @@ const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => 
   }
 };
 
-const getCustomersListCallback = async (workerIdentity, connection) => {
+const getCustomersList = async (workerIdentity, connection) => {
   let sfdcRecords = [];
   try {
     sfdcRecords = await connection.sobject("Contact")
@@ -131,7 +141,34 @@ const getCustomersListCallback = async (workerIdentity, connection) => {
   return {
     objects:
     {
-      customers: list
+      customers: list,
+      searchable: true
+    }
+  };
+};
+
+const getCustomersSearch = async (workerIdentity, query, connection) => {
+  console.log('A search query was sent:', JSON.stringify(query));
+  let sfdcRecords = [];
+  try {
+    sfdcRecords = await connection.search(
+      `FIND {${query}*} IN NAME FIELDS RETURNING Contact(Id, Name WHERE Owner.Username = '${workerIdentity}')`
+    );
+    console.log("Fetched # SFDC records for customers search: " + sfdcRecords.searchRecords.length);
+  } catch (err) {
+    console.error(err);
+  }
+
+  const list = sfdcRecords.searchRecords.map(contact => ({
+    display_name: contact.Name,
+    customer_id: contact.Id
+  }));
+
+  return {
+    objects:
+    {
+      customers: list,
+      searchable: true
     }
   };
 };

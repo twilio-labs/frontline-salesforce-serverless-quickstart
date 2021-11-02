@@ -7,8 +7,9 @@ exports.handler = async function (context, event, callback) {
     response.appendHeader('Content-Type', 'application/json');
     const conversationSid = event.ConversationSid;
     const workerNumber = event['MessagingBinding.ProxyAddress'];
-    const sfdcConn = await sfdcAuthenticate(context);
-    await routeConversation(context, twilioClient, conversationSid, workerNumber, sfdcConn);
+    const sfdcConnectionIdentity = await sfdcAuthenticate(context, null); // this is null due to no user context, default to env. var SF user
+    const { connection } = sfdcConnectionIdentity;
+    await routeConversation(context, twilioClient, conversationSid, workerNumber, connection);
     return callback(null, response);
 };
 

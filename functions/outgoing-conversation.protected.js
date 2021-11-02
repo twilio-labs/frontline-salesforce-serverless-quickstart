@@ -6,8 +6,9 @@ exports.handler = async function (context, event, callback) {
     response.appendHeader('Content-Type', 'application/json');
     try {
         console.log('Frontline user identity: ' + event.Worker);
-        const sfdcConn = await sfdcAuthenticate(context);
-        const outboundNumber = await getWorkerOutboundNumber(event.Worker, sfdcConn);
+        const sfdcConnectionIdentity = await sfdcAuthenticate(context, event.Worker);
+        const { connection } = sfdcConnectionIdentity;
+        const outboundNumber = await getWorkerOutboundNumber(event.Worker, connection);
         switch (event.Location) {
             case 'GetProxyAddress': {
                 if (event.ChannelType === 'whatsapp') {

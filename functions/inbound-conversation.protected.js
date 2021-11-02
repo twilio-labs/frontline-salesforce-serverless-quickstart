@@ -5,13 +5,16 @@ exports.handler = async function (context, event, callback) {
     const twilioClient = context.getTwilioClient();
     let response = new Twilio.Response();
     response.appendHeader('Content-Type', 'application/json');
+    const customerNumber = (event['MessagingBinding.Address'] && event['MessagingBinding.Address'].startsWith('whatsapp:'))
+        ? event['MessagingBinding.Address'].substring(9)
+        : event['MessagingBinding.Address'];
     switch (event.EventType) {
         case 'onConversationAdd': {
-            const customerNumber = event['MessagingBinding.Address'];
             const isIncomingConversation = !!customerNumber;
             if (isIncomingConversation) {
-                const sfdcConn = await sfdcAuthenticate(context);
-                const customerDetails = await getCustomerByNumber(customerNumber, sfdcConn) || {};
+                const sfdcConnectionIdentity = await sfdcAuthenticate(context, null); // this is null due to no user context, default to env. var SF user
+                const { connection } = sfdcConnectionIdentity;
+                const customerDetails = await getCustomerByNumber(customerNumber, connection) || {};
                 const conversationProperties = {
                     friendly_name: customerDetails.display_name || customerNumber,
                 };
@@ -21,7 +24,6 @@ exports.handler = async function (context, event, callback) {
         } case 'onParticipantAdded': {
             const conversationSid = event.ConversationSid;
             const participantSid = event.ParticipantSid;
-            const customerNumber = event['MessagingBinding.Address'];
             const isCustomer = customerNumber && !event.Identity;
             if (isCustomer) {
                 const customerParticipant = await twilioClient.conversations
@@ -29,8 +31,9 @@ exports.handler = async function (context, event, callback) {
                     .participants
                     .get(participantSid)
                     .fetch();
-                const sfdcConn = await sfdcAuthenticate(context);
-                const customerDetails = await getCustomerByNumber(customerNumber, sfdcConn) || {};
+                const sfdcConnectionIdentity = await sfdcAuthenticate(context, null);
+                const { connection } = sfdcConnectionIdentity;
+                const customerDetails = await getCustomerByNumber(customerNumber, connection) || {};
                 await setCustomerParticipantProperties(customerParticipant, customerDetails);
             }
             break;

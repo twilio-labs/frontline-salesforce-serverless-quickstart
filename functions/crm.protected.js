@@ -10,8 +10,8 @@ exports.handler = async function (context, event, callback) {
       response.setBody([]);
       return callback(null, response);
     } else {
-      const connection = await sfdcAuthenticate(context, event.Worker);
-      const identityInfo = await connection.identity();
+      const sfdcConnectionIdentity = await sfdcAuthenticate(context, event.Worker);
+      const { connection, identityInfo } = sfdcConnectionIdentity;
       console.log('Connected as SF user:' + identityInfo.username);
       switch (event.Location) {
         case 'GetCustomerDetailsByCustomerId': {

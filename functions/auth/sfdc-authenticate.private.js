@@ -76,8 +76,8 @@ const updateTokenCache = async (context, twilioClient, connection, identityInfo)
             in Doc SID ${createdDocument.sid}`,
         );
     } catch (e) {
-        console.error(e);
         if (e.status === 409 && e.code === 54301) {
+            console.log(e);
             const updatedDocument = await twilioClient.sync
                 .services(context.SYNC_SERVICE_SID)
                 .documents(identityInfo.username)

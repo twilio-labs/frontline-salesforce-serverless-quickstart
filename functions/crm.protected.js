@@ -6,48 +6,48 @@ exports.handler = async function (context, event, callback) {
   response.appendHeader('Content-Type', 'application/json');
   try {
     console.log('Frontline user identity: ' + event.Worker);
-    if (event.Anchor) { // workaround to avoid pagination
-      response.setBody([]);
-      return callback(null, response);
-    } else {
-      const sfdcConnectionIdentity = await sfdcAuthenticate(context, event.Worker);
-      const { connection, identityInfo } = sfdcConnectionIdentity;
-      console.log('Connected as SF user:' + identityInfo.username);
-      switch (event.Location) {
-        case 'GetCustomerDetailsByCustomerId': {
-          response.setBody(
-            await getCustomerDetailsByCustomerIdCallback(
-              event.CustomerId,
-              connection)
-          );
-          break;
-        }
-        case 'GetCustomersList': {
-          if (event.Query && event.Query.length > 1) {
-            response.setBody(
-              await getCustomersSearch(
-                event.Worker,
-                event.Query,
-                connection,
-              )
-            );
-          } else {
-            response.setBody(
-              await getCustomersList(
-                //event.PageSize, // not currently handling pagination
-                event.Worker,
-                connection)
-            );
-          }
-          break;
-        }
-        default: {
-          console.log('Unknown Location: ', event.Location);
-          res.setStatusCode(422);
-        }
+    const sfdcConnectionIdentity = await sfdcAuthenticate(context, event.Worker);
+    const { connection, identityInfo } = sfdcConnectionIdentity;
+    console.log('Connected as SF user:' + identityInfo.username);
+    switch (event.Location) {
+      case 'GetCustomerDetailsByCustomerId': {
+        response.setBody(
+          await getCustomerDetailsByCustomerIdCallback(
+            event.CustomerId,
+            connection)
+        );
+        break;
       }
-      return callback(null, response);
+      case 'GetCustomersList': {
+        if (event.Query && event.Query.length > 1) {
+          response.setBody(
+            await getCustomersSearch(
+              event.Worker,
+              event.Query,
+              connection,
+              event.PageSize,
+              event.NextPageToken
+            )
+          );
+        } else {
+          response.setBody(
+            await getCustomersList(
+              event.Worker,
+              connection,
+              event.PageSize,
+              event.NextPageToken
+            )
+          );
+        }
+        break;
+      }
+      default: {
+        console.log('Unknown Location: ', event.Location);
+        res.setStatusCode(422);
+      }
     }
+    return callback(null, response);
+
   } catch (e) {
     console.error(e);
     response.setStatusCode(500);
@@ -112,7 +112,7 @@ const getCustomerDetailsByCustomerIdCallback = async (contactId, connection) => 
   }
 };
 
-const getCustomersList = async (workerIdentity, connection) => {
+const getCustomersList = async (workerIdentity, connection, pageSize, offset) => {
   let sfdcRecords = [];
   try {
     sfdcRecords = await connection.sobject("Contact")
@@ -126,7 +126,8 @@ const getCustomersList = async (workerIdentity, connection) => {
         }
       )
       .sort({ Name: 1 })
-      .limit(2000)
+      .limit(pageSize)
+      .skip(offset ? offset : 0)
       .execute();
     console.log("Fetched # SFDC records for customers list: " + sfdcRecords.length);
   } catch (err) {
@@ -142,17 +143,18 @@ const getCustomersList = async (workerIdentity, connection) => {
     objects:
     {
       customers: list,
-      searchable: true
+      searchable: true,
+      next_page_token: parseInt(pageSize) + (offset ? parseInt(offset) : 0)
     }
   };
 };
 
-const getCustomersSearch = async (workerIdentity, query, connection) => {
+const getCustomersSearch = async (workerIdentity, query, connection, pageSize, offset) => {
   console.log('A search query was sent:', JSON.stringify(query));
   let sfdcRecords = [];
   try {
     sfdcRecords = await connection.search(
-      `FIND {${query}*} IN NAME FIELDS RETURNING Contact(Id, Name WHERE Owner.Username = '${workerIdentity}')`
+      `FIND {${query}*} IN NAME FIELDS RETURNING Contact(Id, Name WHERE Owner.Username = '${workerIdentity}' LIMIT ${pageSize} OFFSET ${offset ? parseInt(offset) : 0})`
     );
     console.log("Fetched # SFDC records for customers search: " + sfdcRecords.searchRecords.length);
   } catch (err) {
@@ -168,7 +170,8 @@ const getCustomersSearch = async (workerIdentity, query, connection) => {
     objects:
     {
       customers: list,
-      searchable: true
+      searchable: true,
+      next_page_token: parseInt(pageSize) + (offset ? parseInt(offset) : 0)
     }
   };
 };

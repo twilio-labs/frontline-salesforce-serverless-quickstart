@@ -10,6 +10,7 @@ The Functions implement the following Frontline and Conversations callbacks:
 - [crm.protected.js](functions/crm.protected.js) - Implements the Frontline [CRM Callback](https://www.twilio.com/docs/frontline/my-customers) to:
     - Pull a Customer List per user from Contact records from Salesforce based on the Salesforce Contact Owner matching the Frontline user's identity
     - Pull a Customer's details by Customer ID (Salesforce Contact Record ID)
+    - Execute a SOSL search against the Salesforce Contact list by Contact Owner
 - [outgoing-conversation.protected.js](functions/outgoing-conversation.protected.js) - Implements the Frontline [Outgoing Conversations Callback](https://www.twilio.com/docs/frontline/outgoing-conversations) to return the outbound proxy addresses for SMS and WhatsApp channels
 - [inbound-routing.protected.js](functions/inbound-routing.protected.js) - Implements the Frontline [Inbound Routing Callback](https://www.twilio.com/docs/frontline/handle-incoming-conversations) to add the Frontline worker to the Conversation
 - [templates.protected.js](functions/templates.protected.js) - Implements the Frontline [Templates Callback](https://www.twilio.com/docs/frontline/templated-messages) to return WhatsApp-approved templates for outbound WhatsApp conversations
@@ -38,6 +39,7 @@ To deploy these Frontline Functions, you will need:
 
 - An active Twilio account with Frontline and [approved WhatsApp Senders and Templates](https://www.twilio.com/docs/whatsapp/tutorial/connect-number-business-profile) 
 - [SSO](https://www.twilio.com/docs/frontline/sso) configured for your Frontline instance. This ensures that the Salesforce and Frontline accounts can be linked securely using a common SSO identity provider.
+- A new, unique [Sync service](https://www.twilio.com/docs/sync/api/service) SID within the Frontline Twilio account to cache Salesforce access tokens
 - npm version 5.0.0 or later installed (type `npm -v` in your terminal to check)
 - Node.js version 12 or later installed (type `node -v` in your terminal to check)
 - [Twilio CLI](https://www.twilio.com/docs/twilio-cli/quickstart#install-twilio-cli) along with the [Serverless Plugin](https://www.twilio.com/docs/twilio-cli/plugins#available-plugins). Run the following commands to install them:
@@ -89,10 +91,12 @@ Select "Use digital signatures" and follow Salesforce's instructions to [Create 
     ACCOUNT_SID=Found at https://www.twilio.com/console
     AUTH_TOKEN=Found at https://www.twilio.com/console 
     SF_CONSUMER_KEY=Your Salesforce Connected App OAuth Client ID
-    SF_USERNAME=The username to make JWT bearer token Salesforce API calls
+    SF_USERNAME=The username to make JWT bearer token Salesforce API calls for inbound callbacks lacking user context to the webhook request
+    SFDC_INSTANCE_URL=Your Salesforce instance URL, e.g. https://abc-dev-ed.my.salesforce.com
     WHATSAPP_NUMBER=WhatsApp number for outbound conversations proxy address
     SMS_NUMBER=SMS number for outbound conversations proxy address
     DEFAULT_WORKER=The default Frontline worker for inbound conversation routing if no matching Contact Owner is found in Salesforce
+    SYNC_SERVICE_SID=The Sync Service SID used to store Salesforce access tokens
   ```
 
 ## Development
@@ -101,7 +105,7 @@ In order to develop locally, you can use the `twilio-run` CLI by running (from t
 
   ```
   # Start Twilio Functions
-  npm run start 
+  twilio serverless:start
   ```
 
 This will automatically start up the Twilio Serverless local development server. Your app will run on `http://localhost:3000`.

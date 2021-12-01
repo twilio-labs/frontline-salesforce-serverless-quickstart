@@ -5,23 +5,24 @@ exports.handler = async function (context, event, callback) {
     const twilioClient = context.getTwilioClient();
     let response = new Twilio.Response();
     response.appendHeader('Content-Type', 'application/json');
+    const customerNumber = (event['MessagingBinding.Address'] && event['MessagingBinding.Address'].startsWith('whatsapp:'))
+        ? event['MessagingBinding.Address'].substring(9)
+        : event['MessagingBinding.Address'];
+    const conversationSid = event.ConversationSid;
     switch (event.EventType) {
-        case 'onConversationAdd': {
-            const customerNumber = event['MessagingBinding.Address'];
+        case 'onConversationAdded': {
             const isIncomingConversation = !!customerNumber;
             if (isIncomingConversation) {
-                const sfdcConn = await sfdcAuthenticate(context);
-                const customerDetails = await getCustomerByNumber(customerNumber, sfdcConn) || {};
-                const conversationProperties = {
-                    friendly_name: customerDetails.display_name || customerNumber,
-                };
-                response.setBody(conversationProperties);
+                const sfdcConnectionIdentity = await sfdcAuthenticate(context, null); // this is null due to no user context, default to env. var SF user
+                const { connection } = sfdcConnectionIdentity;
+                const customerDetails = await getCustomerByNumber(customerNumber, connection) || {};
+                await twilioClient.conversations
+                    .conversations(conversationSid)
+                    .update({friendlyName: customerDetails.display_name || customerNumber});
             }
             break;
         } case 'onParticipantAdded': {
-            const conversationSid = event.ConversationSid;
             const participantSid = event.ParticipantSid;
-            const customerNumber = event['MessagingBinding.Address'];
             const isCustomer = customerNumber && !event.Identity;
             if (isCustomer) {
                 const customerParticipant = await twilioClient.conversations
@@ -29,8 +30,9 @@ exports.handler = async function (context, event, callback) {
                     .participants
                     .get(participantSid)
                     .fetch();
-                const sfdcConn = await sfdcAuthenticate(context);
-                const customerDetails = await getCustomerByNumber(customerNumber, sfdcConn) || {};
+                const sfdcConnectionIdentity = await sfdcAuthenticate(context, null);
+                const { connection } = sfdcConnectionIdentity;
+                const customerDetails = await getCustomerByNumber(customerNumber, connection) || {};
                 await setCustomerParticipantProperties(customerParticipant, customerDetails);
             }
             break;
@@ -86,7 +88,7 @@ const setCustomerParticipantProperties = async (customerParticipant, customerDet
     // If there is difference, update participant
     if (customerParticipant.attributes !== customerProperties.attributes) {
         // Update attributes of customer to include customer_id
-        await customerParticipant
+        updatedParticipant = await customerParticipant
             .update(customerProperties)
             .catch(e => console.log("Update customer participant failed: ", e));
     }

@@ -69,7 +69,7 @@ Select "Use digital signatures" and follow Salesforce's instructions to [Create 
 1. Clone this repo:
 
   ```bash
-  git clone https://github.com/randyjohnston/function-frontline-salesforce
+  git clone https://github.com/twilio-labs/function-frontline-salesforce
   ```
 
 2. Install the dependencies

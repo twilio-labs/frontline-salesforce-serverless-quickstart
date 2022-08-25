@@ -69,7 +69,7 @@ Select "Use digital signatures" and follow Salesforce's instructions to [Create 
 1. Clone this repo:
 
   ```bash
-  git clone https://github.com/twilio-labs/function-frontline-salesforce
+  git clone https://github.com/twilio-labs/frontline-salesforce-serverless-quickstart
   ```
 
 2. Install the dependencies
